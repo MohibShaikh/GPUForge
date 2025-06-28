@@ -1,12 +1,12 @@
 # **GPUForge - The Smart GPU Environment Creator**
 
-> **Forge perfect GPU environments in seconds, not hours.**
+> ** Forge perfect GPU environments in seconds, not hours.**
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GPU Support](https://img.shields.io/badge/GPU-NVIDIA%20%7C%20AMD%20%7C%20Intel-green.svg)]()
 
-## **What is GPUForge?**
+## ** What is GPUForge?**
 
 GPUForge is an **intelligent GPU environment creator** that automatically detects your GPU hardware and generates optimized conda environments for machine learning. Say goodbye to CUDA compatibility nightmares and hello to one-command ML setup!
 
@@ -28,7 +28,7 @@ cd gpuforge
 pip install -r requirements.txt
 ```
 
-### **Basic Usage**
+### ** Basic Usage**
 ```bash
 # Auto-detect GPU and create optimized environment
 python gpuforge.py my-ml-env
@@ -46,7 +46,7 @@ python gpuforge.py dl-env --profile deep_learning         # 12GB+ GPU
 python gpuforge.py cpu-env --cpu-only
 ```
 
-### **What You Get**
+### ** What You Get**
 ```
 my-ml-env.yml              # Optimized conda environment
 install_my-ml-env.bat      # One-click installation script
