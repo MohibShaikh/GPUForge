@@ -215,7 +215,7 @@ python gpuforge.py prod-env --profile production --deploy-cloud --auto-scaling
 # Enterprise-ready deployment with monitoring and cost optimization
 ```
 
-### **💻 Laptop Users**
+### ** Laptop Users**
 ```bash
 python gpuforge.py basic-env --cpu-only --profile lightweight
 # Works on any hardware, even without GPU
