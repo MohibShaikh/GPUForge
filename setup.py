@@ -35,7 +35,7 @@ setup(
     install_requires=requirements,
     entry_points={
         "console_scripts": [
-            "gpuforge=gpuforge:main",
+            "gpuforge=gpuforge:cli_main",
         ],
     },
     keywords=[
