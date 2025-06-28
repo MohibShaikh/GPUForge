@@ -46,6 +46,16 @@ try:
 except ImportError:
     GPUEnvironmentCreator = None
 
+# Cloud support (Phase 1)
+try:
+    from .cloud_support import CloudDetector, CloudInstance, detect_cloud
+    CLOUD_SUPPORT_AVAILABLE = True
+except ImportError:
+    CloudDetector = None
+    CloudInstance = None
+    detect_cloud = None
+    CLOUD_SUPPORT_AVAILABLE = False
+
 # Build __all__ list dynamically based on what's available
 __all__ = []
 if UniversalGPUDetector:
@@ -62,6 +72,8 @@ if GPUDetector:
     __all__.append('GPUDetector')
 if GPUEnvironmentCreator:
     __all__.append('GPUEnvironmentCreator')
+if CLOUD_SUPPORT_AVAILABLE:
+    __all__.extend(['CloudDetector', 'CloudInstance', 'detect_cloud', 'CLOUD_SUPPORT_AVAILABLE'])
 
 def cli_main():
     """Entry point for the GPUForge CLI"""

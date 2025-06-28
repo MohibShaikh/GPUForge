@@ -26,6 +26,16 @@ except ImportError:
     SmartErrorRecovery = None
     ConfigurationManager = None
 
+# Cloud support (Phase 1 - optional feature)
+try:
+    from .cloud_support import detect_cloud, get_cloud_environment_info, is_cloud_gpu_instance
+    CLOUD_SUPPORT_AVAILABLE = True
+except ImportError:
+    CLOUD_SUPPORT_AVAILABLE = False
+    detect_cloud = None
+    get_cloud_environment_info = None
+    is_cloud_gpu_instance = None
+
 from .compatibility_finder import CompatibilityFinder
 from .env_generator import EnvironmentGenerator
 
@@ -54,6 +64,21 @@ class OptimizedGPUEnvironmentCreator:
         """Main async workflow"""
         
         try:
+            # Cloud Detection (Phase 1 - optional)
+            cloud_instance = None
+            if CLOUD_SUPPORT_AVAILABLE and hasattr(args, 'detect_cloud') and args.detect_cloud:
+                try:
+                    print("☁️ Checking cloud environment...")
+                    cloud_instance = await detect_cloud()
+                    if cloud_instance:
+                        print(f"☁️ Running on {cloud_instance.provider.upper()}: {cloud_instance.instance_type}")
+                        if cloud_instance.gpu_detected:
+                            print(f"   Cloud GPU detected: {cloud_instance.gpu_count}x {cloud_instance.gpu_type}")
+                    else:
+                        print("💻 Local environment detected")
+                except Exception as e:
+                    print(f"⚠️ Cloud detection failed (continuing locally): {e}")
+            
             # GPU Detection
             print("🔍 Detecting GPUs...")
             detection_start = time.time()
@@ -200,7 +225,37 @@ async def main():
     parser.add_argument('--diagnose', action='store_true', help='Run diagnosis')
     parser.add_argument('--verbose', action='store_true', help='Verbose output')
     
+    # Cloud support (Phase 1)
+    if CLOUD_SUPPORT_AVAILABLE:
+        parser.add_argument('--detect-cloud', action='store_true', 
+                           help='Detect and optimize for cloud environment (AWS/GCP/Azure)')
+        parser.add_argument('--cloud-only', action='store_true',
+                           help='Test cloud detection without creating environment')
+    
     args = parser.parse_args()
+    
+    # Handle cloud-only detection
+    if CLOUD_SUPPORT_AVAILABLE and hasattr(args, 'cloud_only') and args.cloud_only:
+        try:
+            print("☁️ Testing cloud detection...")
+            cloud_instance = await detect_cloud()
+            if cloud_instance:
+                print(f"✅ Cloud environment detected!")
+                print(f"   Provider: {cloud_instance.provider.upper()}")
+                print(f"   Instance: {cloud_instance.instance_type}")
+                if cloud_instance.region:
+                    print(f"   Region: {cloud_instance.region}")
+                if cloud_instance.gpu_detected:
+                    print(f"   GPU: {cloud_instance.gpu_count}x {cloud_instance.gpu_type}")
+                else:
+                    print(f"   GPU: None detected")
+                print(f"   Confidence: {cloud_instance.confidence:.1%}")
+            else:
+                print("💻 Local environment (no cloud detected)")
+            return
+        except Exception as e:
+            print(f"❌ Cloud detection failed: {e}")
+            sys.exit(1)
     
     if not args.name:
         parser.print_help()
