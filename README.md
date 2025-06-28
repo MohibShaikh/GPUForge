@@ -23,7 +23,7 @@ GPUForge is an **intelligent GPU environment creator** that automatically detect
 
 ### **Installation**
 ```bash
-git clone https://github.com/your-username/gpuforge.git
+git clone https://github.com/MohibShaikh/GPUforge.git
 cd gpuforge
 pip install -r requirements.txt
 ```
