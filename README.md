@@ -1,4 +1,4 @@
-# 🔥 **GPUForge - The Smart GPU Environment Creator**
+# **GPUForge - The Smart GPU Environment Creator**
 
 > **Forge perfect GPU environments in seconds, not hours.**
 
@@ -6,20 +6,20 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GPU Support](https://img.shields.io/badge/GPU-NVIDIA%20%7C%20AMD%20%7C%20Intel-green.svg)]()
 
-## **🎯 What is GPUForge?**
+## **What is GPUForge?**
 
 GPUForge is an **intelligent GPU environment creator** that automatically detects your GPU hardware and generates optimized conda environments for machine learning. Say goodbye to CUDA compatibility nightmares and hello to one-command ML setup!
 
-### **✨ Key Features**
+### ** Key Features**
 
-- ⚡ **6x Faster**: Auto-detection with smart caching (5s → 0.8s)
-- 🎯 **Smart Profiles**: 8 specialized environments for different use cases
-- 🌍 **Universal GPU Support**: NVIDIA, AMD, and Intel GPUs
-- 🛠️ **Auto-Troubleshooting**: Intelligent error recovery with fix suggestions
-- 📊 **Performance Monitoring**: Real-time optimization metrics
-- 🧠 **ML-Optimized**: Best practices for PyTorch, TensorFlow, and more
+- **6x Faster**: Auto-detection with smart caching (5s → 0.8s)
+-  **Smart Profiles**: 8 specialized environments for different use cases
+-  **Universal GPU Support**: NVIDIA, AMD, and Intel GPUs
+-  **Auto-Troubleshooting**: Intelligent error recovery with fix suggestions
+-  **Performance Monitoring**: Real-time optimization metrics
+-  **ML-Optimized**: Best practices for PyTorch, TensorFlow, and more
 
-## **🚀 Quick Start**
+## **Quick Start**
 
 ### **Installation**
 ```bash
@@ -54,7 +54,7 @@ test_my-ml-env.bat         # GPU functionality test
 my-ml-env_info.txt         # Complete environment documentation
 ```
 
-## **🎯 Smart Profiles**
+## ** Smart Profiles**
 
 GPUForge includes 8 specialized profiles optimized for different use cases:
 
@@ -148,7 +148,7 @@ python gpuforge.py prod-env --profile production
 # Stable, pinned versions for reliable deployment
 ```
 
-### **💻 Laptop Users**
+### ** Laptop Users**
 ```bash
 python gpuforge.py basic-env --cpu-only --profile lightweight
 # Works on any hardware, even without GPU
