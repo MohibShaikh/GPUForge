@@ -1,0 +1,18 @@
+# GPUForge Cloud Deployment Dependencies
+# Install with: pip install -r requirements-cloud.txt
+
+# Core cloud functionality
+boto3>=1.34.0              # AWS SDK for Python
+google-cloud-compute>=1.14.0  # Google Cloud Compute Engine (optional)
+azure-mgmt-compute>=30.0.0    # Azure Compute Management (optional)
+
+# Terraform integration (install separately)
+# Download from: https://www.terraform.io/downloads
+
+# Enhanced cloud features
+paramiko>=3.3.0            # SSH client for remote setup
+pyyaml>=6.0                # YAML configuration files
+cryptography>=41.0.0       # Security and encryption
+
+# Monitoring and cost optimization
+requests>=2.31.0           # HTTP requests for cloud APIs 

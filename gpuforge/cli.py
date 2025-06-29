@@ -258,6 +258,19 @@ def add_cloud_commands(parser):
     cloud_group.add_argument('--cloud-only', action='store_true',
                             help='Only show cloud environment info (skip local detection)')
     
+    # Cloud credentials (for deployment)
+    cred_group = parser.add_argument_group('🔐 Cloud Credentials')
+    cred_group.add_argument('--aws-access-key', type=str, metavar='KEY',
+                           help='AWS Access Key ID (or use AWS_ACCESS_KEY_ID env var)')
+    cred_group.add_argument('--aws-secret-key', type=str, metavar='SECRET', 
+                           help='AWS Secret Access Key (or use AWS_SECRET_ACCESS_KEY env var)')
+    cred_group.add_argument('--aws-region', type=str, default='us-east-1',
+                           help='AWS region (default: us-east-1)')
+    cred_group.add_argument('--gcp-project', type=str, metavar='PROJECT',
+                           help='Google Cloud Project ID')
+    cred_group.add_argument('--gcp-credentials', type=str, metavar='PATH',
+                           help='Path to GCP service account JSON file')
+    
     # Phase 2: Cloud Recommendations
     cloud_group.add_argument('--recommend-cloud', action='store_true',
                             help='Get cloud instance recommendations for your workload')
@@ -295,6 +308,31 @@ def add_cloud_commands(parser):
                             help='Analyze and optimize deployment costs')
     cloud_group.add_argument('--terminate-deployment', type=str, metavar='DEPLOYMENT_ID',
                             help='Terminate cloud deployment')
+    
+    # Real cloud deployment options
+    cloud_group.add_argument('--deploy-cloud-real', action='store_true',
+                            help='Deploy real cloud infrastructure (uses Terraform)')
+    cloud_group.add_argument('--list-deployments-real', action='store_true',
+                            help='List active real cloud deployments')
+    cloud_group.add_argument('--deployment-status-real', type=str, metavar='DEPLOYMENT_ID',
+                            help='Get status of real deployment')
+    cloud_group.add_argument('--terminate-deployment-real', type=str, metavar='DEPLOYMENT_ID',
+                            help='Terminate real cloud deployment')
+    
+    # Real deployment options
+    deploy_group = parser.add_argument_group('🚀 Real Deployment Options')
+    deploy_group.add_argument('--deployment-name', type=str, metavar='NAME',
+                             help='Name for the deployment (default: auto-generated)')
+    deploy_group.add_argument('--instance-type', type=str, default='g4dn.xlarge',
+                             help='EC2 instance type (default: g4dn.xlarge)')
+    deploy_group.add_argument('--spot-ok', action='store_true',
+                             help='Allow spot instances (up to 70%% savings)')
+    deploy_group.add_argument('--max-hourly-cost', type=float, default=10.0,
+                             help='Maximum hourly cost limit (default: $10.00)')
+    deploy_group.add_argument('--storage-size', type=int, default=100,
+                             help='Storage size in GB (default: 100)')
+    deploy_group.add_argument('--auto-shutdown', type=int, default=24,
+                             help='Auto-shutdown after N hours (default: 24)')
 
 async def handle_cloud_recommendations(args):
     """Handle cloud instance recommendations"""
@@ -658,6 +696,139 @@ Examples:
                 print(f"\n⚠️  Issues Found:")
                 for issue in diagnosis['issues'][:3]:
                     print(f"   • {issue}")
+        return
+    
+    # Real cloud deployment
+    if hasattr(args, 'deploy_cloud_real') and args.deploy_cloud_real:
+        try:
+            from .cloud_deployment import RealDeploymentConfig, RealCloudDeployer
+            
+            deployment_name = getattr(args, 'deployment_name', None) or f"gpuforge-{int(time.time())}"
+            
+            # Check for required dependencies
+            missing_deps = []
+            try:
+                import boto3
+            except ImportError:
+                missing_deps.append("boto3")
+            
+            import subprocess
+            try:
+                subprocess.run(["terraform", "--version"], capture_output=True, check=True)
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                missing_deps.append("terraform")
+            
+            if missing_deps:
+                print(f"❌ Missing required dependencies: {', '.join(missing_deps)}")
+                print("Install with:")
+                if "boto3" in missing_deps:
+                    print("  pip install boto3")
+                if "terraform" in missing_deps:
+                    print("  Download from: https://www.terraform.io/downloads")
+                return
+            
+            # Create deployment config with CLI credentials and parameters
+            config = RealDeploymentConfig(
+                name=deployment_name,
+                provider="aws",  # Start with AWS only
+                region=getattr(args, 'aws_region', 'us-east-1'),
+                instance_type=getattr(args, 'instance_type', 'g4dn.xlarge'),
+                # Use CLI credentials if provided
+                aws_access_key_id=getattr(args, 'aws_access_key', None),
+                aws_secret_access_key=getattr(args, 'aws_secret_key', None),
+                # Deployment options
+                use_spot_instances=getattr(args, 'spot_ok', False),
+                max_hourly_cost=getattr(args, 'max_hourly_cost', 10.0),
+                storage_size_gb=getattr(args, 'storage_size', 100),
+                auto_shutdown_hours=getattr(args, 'auto_shutdown', 24)
+            )
+            
+            deployer = RealCloudDeployer()
+            deployment_id = deployer.deploy_aws_instance(config)
+            
+            if deployment_id:
+                print(f"✅ Real cloud deployment created: {deployment_id}")
+            else:
+                print("❌ Deployment cancelled or failed")
+                
+        except ImportError as e:
+            print(f"❌ Real cloud deployment requires additional dependencies: {e}")
+            print("Install with: pip install boto3")
+        except Exception as e:
+            print(f"❌ Real cloud deployment failed: {e}")
+        return
+    
+    # List real deployments
+    if hasattr(args, 'list_deployments_real') and args.list_deployments_real:
+        try:
+            from .cloud_deployment import RealCloudDeployer
+            deployer = RealCloudDeployer()
+            deployments = deployer.list_deployments()
+            
+            if not deployments:
+                print("📋 No active real deployments found")
+            else:
+                print(f"📋 Active Real Deployments ({len(deployments)}):")
+                for deployment in deployments:
+                    status = deployment.get('real_status', deployment.get('status', 'unknown'))
+                    created = deployment.get('created_at', 'unknown')
+                    print(f"   • {deployment['deployment_id']}")
+                    print(f"     Status: {status}")
+                    print(f"     Created: {created}")
+                    if 'outputs' in deployment:
+                        print(f"     Instance: {deployment['outputs'].get('instance_id', 'N/A')}")
+                        print(f"     IP: {deployment['outputs'].get('public_ip', 'N/A')}")
+                    print()
+                    
+        except Exception as e:
+            print(f"❌ Error listing real deployments: {e}")
+        return
+    
+    # Terminate real deployment
+    if hasattr(args, 'terminate_deployment_real') and args.terminate_deployment_real:
+        try:
+            from .cloud_deployment import RealCloudDeployer
+            deployer = RealCloudDeployer()
+            success = deployer.terminate_deployment(args.terminate_deployment_real)
+            
+            if success:
+                print(f"✅ Real deployment {args.terminate_deployment_real} terminated")
+            else:
+                print(f"❌ Failed to terminate deployment {args.terminate_deployment_real}")
+                
+        except Exception as e:
+            print(f"❌ Error terminating real deployment: {e}")
+        return
+    
+    # Status of real deployment
+    if hasattr(args, 'deployment_status_real') and args.deployment_status_real:
+        try:
+            from .cloud_deployment import RealCloudDeployer
+            deployer = RealCloudDeployer()
+            deployment = deployer.get_deployment_status(args.deployment_status_real)
+            
+            if deployment:
+                print(f"📊 Deployment Status: {args.deployment_status_real}")
+                print(f"   Status: {deployment.get('real_status', deployment.get('status', 'unknown'))}")
+                print(f"   Created: {deployment.get('created_at', 'unknown')}")
+                print(f"   Provider: {deployment.get('provider', 'unknown')}")
+                
+                if 'outputs' in deployment:
+                    outputs = deployment['outputs']
+                    print(f"   Instance ID: {outputs.get('instance_id', 'N/A')}")
+                    print(f"   Public IP: {outputs.get('public_ip', 'N/A')}")
+                    print(f"   Public DNS: {outputs.get('public_dns', 'N/A')}")
+                
+                if deployment.get('real_status') == 'running':
+                    print(f"\n🔗 Access your instance:")
+                    print(f"   SSH: ssh -i ~/.ssh/{deployment['config']['key_pair_name']}.pem ubuntu@{outputs.get('public_ip', 'N/A')}")
+                    print(f"   Jupyter: http://{outputs.get('public_ip', 'N/A')}:8888")
+                
+            else:
+                print(f"❌ Real deployment {args.deployment_status_real} not found")
+                
+        except Exception as e:
+            print(f"❌ Error getting real deployment status: {e}")
         return
     
     # Main environment creation workflow

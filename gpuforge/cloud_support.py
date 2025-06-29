@@ -34,31 +34,100 @@ class CloudDetector:
     
     async def detect_cloud_environment(self) -> Optional[CloudInstance]:
         """
-        Safely detect cloud environment with multiple fallback methods
+        Safely detect cloud environment with detailed verification logging
         Returns None if no cloud detected or if detection fails
         """
+        print("🔍 Starting cloud environment detection...")
+        self._print_system_properties()
+        
         try:
             # Try AWS first (most common)
+            print("\n📍 Step 1: Checking for AWS environment...")
+            print("   🔗 Probing AWS metadata service (169.254.169.254)...")
             aws_result = await self._detect_aws()
             if aws_result:
+                print("✅ AWS environment confirmed!")
+                self._print_cloud_properties(aws_result)
                 return aws_result
+            else:
+                print("❌ AWS metadata service not available")
             
             # Try GCP
+            print("\n📍 Step 2: Checking for Google Cloud environment...")
+            print("   🔗 Probing GCP metadata service (metadata.google.internal)...")
             gcp_result = await self._detect_gcp()
             if gcp_result:
+                print("✅ Google Cloud environment confirmed!")
+                self._print_cloud_properties(gcp_result)
                 return gcp_result
+            else:
+                print("❌ GCP metadata service not available")
             
             # Try Azure
+            print("\n📍 Step 3: Checking for Azure environment...")
+            print("   🔗 Probing Azure metadata service...")
             azure_result = await self._detect_azure()
             if azure_result:
+                print("✅ Azure environment confirmed!")
+                self._print_cloud_properties(azure_result)
                 return azure_result
+            else:
+                print("❌ Azure metadata service not available")
             
+            print("\n📍 Final Result: No cloud environment detected")
+            print("   ℹ️ This appears to be a local development environment")
+            print("   ℹ️ Cloud deployment features will use simulated mode")
             logger.info("No cloud environment detected - running locally")
             return None
             
         except Exception as e:
+            print(f"\n❌ Cloud detection failed: {e}")
             logger.debug(f"Cloud detection failed: {e}")
             return None
+    
+    def _print_system_properties(self):
+        """Print basic system properties for verification"""
+        import socket
+        import platform
+        import os
+        
+        print("\n📊 System Properties Verification:")
+        try:
+            hostname = socket.gethostname()
+            system_info = platform.uname()
+            print(f"   🏷️ Hostname: {hostname}")
+            print(f"   💻 System: {system_info.system} {system_info.release}")
+            print(f"   🏗️ Architecture: {system_info.machine}")
+            print(f"   📍 Node: {system_info.node}")
+            
+            # Check for common cloud environment variables
+            cloud_vars = ['AWS_REGION', 'GOOGLE_CLOUD_PROJECT', 'AZURE_SUBSCRIPTION_ID']
+            env_indicators = []
+            for var in cloud_vars:
+                if os.getenv(var):
+                    env_indicators.append(f"{var}={os.getenv(var)}")
+            
+            if env_indicators:
+                print(f"   🌐 Cloud Environment Variables: {', '.join(env_indicators)}")
+            else:
+                print(f"   🌐 Cloud Environment Variables: None detected")
+                
+        except Exception as e:
+            print(f"   ⚠️ Could not gather system properties: {e}")
+    
+    def _print_cloud_properties(self, instance: CloudInstance):
+        """Print detailed cloud properties for user verification"""
+        print("\n📋 Detected Cloud Properties - PLEASE VERIFY:")
+        print(f"   ☁️ Provider: {instance.provider.upper()}")
+        print(f"   📦 Instance Type: {instance.instance_type}")
+        print(f"   📍 Region: {instance.region or 'Unknown'}")
+        print(f"   🎯 GPU Detected: {'Yes' if instance.gpu_detected else 'No'}")
+        if instance.gpu_detected:
+            print(f"   🔧 GPU Type: {instance.gpu_type or 'Unknown'}")
+            print(f"   📊 GPU Count: {instance.gpu_count}")
+        print(f"   📈 Detection Confidence: {instance.confidence:.1%}")
+        print("   ✅ Do these properties match your expected environment?")
+        print("   ⚠️ If not, please verify your cloud configuration")
     
     async def _detect_aws(self) -> Optional[CloudInstance]:
         """Detect AWS EC2 instance"""
